@@ -1,0 +1,19 @@
+{
+  "name": "@unpourtous/react-native-scrollview-snap-line",
+  "version": "0.0.1",
+  "scripts": {
+    "start": "node_modules/react-native/scripts/packager.sh"
+  },
+  "main": "library/index.js",
+  "dependencies": {
+    "@unpourtous/react-native-popup-stub": "^1.4.2",
+    "lodash": "latest",
+    "moment": "^2.22.1"
+  },
+  "devDependencies": {
+    "lodash": "latest",
+    "moment": "^2.22.1",
+    "react": "16.3.1",
+    "react-native": "^0.51.0"
+  }
+}
