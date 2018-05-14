@@ -1,6 +1,6 @@
 {
   "name": "@unpourtous/react-native-snap-line-scrollview",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "scripts": {
     "start": "node_modules/react-native/scripts/packager.sh"
   },
