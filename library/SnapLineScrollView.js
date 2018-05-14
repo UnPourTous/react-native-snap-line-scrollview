@@ -12,7 +12,7 @@ import {
   View
 } from 'react-native'
 
-const {height, width} = Dimensions.get('window')
+const {height: windowHeight} = Dimensions.get('window')
 export default class SnapLineScrollView extends Component {
   constructor () {
     super(...arguments)
@@ -28,7 +28,6 @@ export default class SnapLineScrollView extends Component {
   }
 
   render () {
-    const {snapLineList = [], throttle = 100} = this.props
     return (
       <ScrollView
         ref={(_ref) => {
@@ -40,62 +39,8 @@ export default class SnapLineScrollView extends Component {
         }}
         onScroll={(e) => {
         }}
-        onScrollEndDrag={(e) => {
-          console.log(e.nativeEvent)
-          this.linePageOffsetList = snapLineList.map(item => item - e.nativeEvent.contentOffset.y)
-
-          if (e.nativeEvent.contentOffset.y - this.startPoint.contentOffset.y > 0) {
-            // 页面向上走
-            let bottomNearestLine
-            let bottomNearestLineOffset = null
-
-            // 查找最贴近底边的snapLine
-            this.linePageOffsetList.forEach((offset, index) => {
-              if (offset >= 0 && offset <= height) {
-                if (bottomNearestLineOffset === null) {
-                  bottomNearestLineOffset = offset
-                  bottomNearestLine = snapLineList[index]
-                } else if (height - bottomNearestLineOffset > height - offset) {
-                  bottomNearestLineOffset = offset
-                  bottomNearestLine = snapLineList[index]
-                }
-              }
-            })
-
-            if (bottomNearestLineOffset + throttle < height) {
-              // 分割线上半部分
-              this._scrollYBy(e, bottomNearestLineOffset)
-            } else if (bottomNearestLineOffset + throttle >= height) {
-              // 回弹
-              this._scrollYBy(e, -(height - bottomNearestLineOffset))
-            }
-          } else {
-            // 页面向下走, 分割线在上半部分，且超出阀值
-            let topNearestLine
-            let topNearestLineOffset = null
-
-            // 查找最贴近底边的snapLine
-            this.linePageOffsetList.forEach((offset, index) => {
-              if (offset >= 0 && offset <= height) {
-                if (topNearestLineOffset === null) {
-                  topNearestLineOffset = offset
-                  topNearestLine = snapLineList[index]
-                } else if (topNearestLineOffset > offset) {
-                  topNearestLineOffset = offset
-                  topNearestLine = snapLineList[index]
-                }
-              }
-            })
-
-            if (topNearestLineOffset > throttle) {
-              this._scrollYBy(e, -(height - topNearestLineOffset))
-            } else if (topNearestLineOffset > 0 && topNearestLineOffset <= throttle) {
-              // 回弹
-              this._scrollYBy(e, topNearestLineOffset)
-            }
-          }
-        }
-        }
+        // onMomentumScrollEnd={(e) => this._onEnd(e)}
+        onScrollEndDrag={e => this._onEnd(e)}
         scrollEventThrottle={16}
         contentContainerStyle={styles.container}>
         <View style={{flex: 1, alignSelf: 'stretch'}}>
@@ -111,6 +56,66 @@ export default class SnapLineScrollView extends Component {
         y: (e.nativeEvent.contentOffset.y + y),
         animated: true
       })
+    }
+  }
+
+  _onEnd (e) {
+    const {snapLineList = [], throttle = 100, containerHeight = windowHeight} = this.props
+    this.linePageOffsetList = snapLineList.map(item => item - e.nativeEvent.contentOffset.y)
+
+    if (e.nativeEvent.contentOffset.y - this.startPoint.contentOffset.y > 0) {
+      // 页面向上走
+      let bottomNearestLine
+      let bottomNearestLineOffset = null
+
+      // 查找最贴近底边的snapLine
+      this.linePageOffsetList.forEach((offset, index) => {
+        if (offset >= 0 && offset <= containerHeight) {
+          if (bottomNearestLineOffset === null) {
+            bottomNearestLineOffset = offset
+            bottomNearestLine = snapLineList[index]
+          } else if (containerHeight - bottomNearestLineOffset > containerHeight - offset) {
+            bottomNearestLineOffset = offset
+            bottomNearestLine = snapLineList[index]
+          }
+        }
+      })
+
+      if (bottomNearestLineOffset !== null) {
+        if (bottomNearestLineOffset + throttle < containerHeight) {
+          // 分割线上半部分
+          this._scrollYBy(e, bottomNearestLineOffset)
+        } else if (bottomNearestLineOffset + throttle >= containerHeight) {
+          // 回弹
+          this._scrollYBy(e, -(containerHeight - bottomNearestLineOffset))
+        }
+      }
+    } else {
+      // 页面向下走, 分割线在上半部分，且超出阀值
+      let topNearestLine
+      let topNearestLineOffset = null
+
+      // 查找最贴近底边的snapLine
+      this.linePageOffsetList.forEach((offset, index) => {
+        if (offset >= 0 && offset <= containerHeight) {
+          if (topNearestLineOffset === null) {
+            topNearestLineOffset = offset
+            topNearestLine = snapLineList[index]
+          } else if (topNearestLineOffset > offset) {
+            topNearestLineOffset = offset
+            topNearestLine = snapLineList[index]
+          }
+        }
+      })
+
+      if (topNearestLineOffset !== null) {
+        if (topNearestLineOffset > throttle) {
+          this._scrollYBy(e, -(containerHeight - topNearestLineOffset))
+        } else if (topNearestLineOffset > 0 && topNearestLineOffset <= throttle) {
+          // 回弹
+          this._scrollYBy(e, topNearestLineOffset)
+        }
+      }
     }
   }
 }
