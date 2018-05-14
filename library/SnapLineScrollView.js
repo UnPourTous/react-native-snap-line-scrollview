@@ -5,7 +5,12 @@ import PropTypes from 'prop-types'
 
 import React, { Component } from 'react'
 import _ from 'lodash'
-import { Dimensions, ScrollView, StyleSheet, View } from 'react-native'
+import {
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  View
+} from 'react-native'
 
 const {height, width} = Dimensions.get('window')
 export default class SnapLineScrollView extends Component {
@@ -42,12 +47,12 @@ export default class SnapLineScrollView extends Component {
           if (e.nativeEvent.contentOffset.y - this.startPoint.contentOffset.y > 0) {
             // 页面向上走
             let bottomNearestLine
-            let bottomNearestLineOffset
+            let bottomNearestLineOffset = null
 
             // 查找最贴近底边的snapLine
             this.linePageOffsetList.forEach((offset, index) => {
               if (offset >= 0 && offset <= height) {
-                if (bottomNearestLineOffset === undefined) {
+                if (bottomNearestLineOffset === null) {
                   bottomNearestLineOffset = offset
                   bottomNearestLine = snapLineList[index]
                 } else if (height - bottomNearestLineOffset > height - offset) {
@@ -57,54 +62,36 @@ export default class SnapLineScrollView extends Component {
               }
             })
 
-            if (bottomNearestLineOffset === undefined) {
-              // 没有屏幕内的snapLine
-            } else {
-              const linePageOffset = bottomNearestLineOffset
-              if (linePageOffset < height && linePageOffset > 0) {
-                if (linePageOffset + throttle < height) {
-                  // 分割线上半部分
-                  this.ref.scrollTo({
-                    y: bottomNearestLine,
-                    animated: true
-                  })
-                } else if (linePageOffset + throttle >= height) {
-                  this.ref.scrollTo({
-                    y: (this.startPoint.contentOffset.y - (height - linePageOffset)),
-                    animated: true
-                  })
-                }
-              }
+            if (bottomNearestLineOffset + throttle < height) {
+              // 分割线上半部分
+              this._scrollYBy(e, bottomNearestLineOffset)
+            } else if (bottomNearestLineOffset + throttle >= height) {
+              // 回弹
+              this._scrollYBy(e, -(height - bottomNearestLineOffset))
             }
           } else {
             // 页面向下走, 分割线在上半部分，且超出阀值
             let topNearestLine
-            let topNearestLineOffset
+            let topNearestLineOffset = null
 
             // 查找最贴近底边的snapLine
             this.linePageOffsetList.forEach((offset, index) => {
               if (offset >= 0 && offset <= height) {
-                if (topNearestLineOffset === undefined) {
+                if (topNearestLineOffset === null) {
                   topNearestLineOffset = offset
-                  topNearestLine = index > 0 ? snapLineList[index - 1] : 0
+                  topNearestLine = snapLineList[index]
                 } else if (topNearestLineOffset > offset) {
                   topNearestLineOffset = offset
-                  topNearestLine = index > 0 ? snapLineList[index - 1] : 0
+                  topNearestLine = snapLineList[index]
                 }
               }
             })
 
             if (topNearestLineOffset > throttle) {
-              // 分割线上半部分
-              this.ref.scrollTo({
-                y: topNearestLine,
-                animated: true
-              })
+              this._scrollYBy(e, -(height - topNearestLineOffset))
             } else if (topNearestLineOffset > 0 && topNearestLineOffset <= throttle) {
-              this.ref.scrollTo({
-                y: (e.nativeEvent.contentOffset.y + topNearestLineOffset),
-                animated: true
-              })
+              // 回弹
+              this._scrollYBy(e, topNearestLineOffset)
             }
           }
         }
@@ -116,6 +103,15 @@ export default class SnapLineScrollView extends Component {
         </View>
       </ScrollView>
     )
+  }
+
+  _scrollYBy (e, y) {
+    if (this.ref) {
+      this.ref.scrollTo({
+        y: (e.nativeEvent.contentOffset.y + y),
+        animated: true
+      })
+    }
   }
 }
 

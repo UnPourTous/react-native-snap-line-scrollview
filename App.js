@@ -22,7 +22,7 @@ import SnapLineScrollView from './library/SnapLineScrollView'
 
 type Props = {};
 const {height, width} = Dimensions.get('window')
-const blockHeight = 900
+const blockHeight = 500
 export default class App extends Component<Props> {
   render () {
     return (
