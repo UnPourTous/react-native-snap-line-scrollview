@@ -30,7 +30,14 @@ export default class SnapLineScrollView extends Component {
   render () {
     return (
       <ScrollView
+        onLayout={(e) => {
+          console.log('onLayout ', e.nativeEvent)
+          React.Children.forEach(this.props.children, (child) => {
+            console.log(child)
+          })
+        }}
         ref={(_ref) => {
+          console.log('ref ')
           _ref && (this.ref = _ref)
         }}
         style={{flex: 1}}
@@ -43,7 +50,12 @@ export default class SnapLineScrollView extends Component {
         onScrollEndDrag={e => this._onEnd(e)}
         scrollEventThrottle={16}
         contentContainerStyle={styles.container}>
-        <View style={{flex: 1, alignSelf: 'stretch'}}>
+        <View
+          onLayout={(e) => {
+            console.log('container onLayout ', e.nativeEvent.layout)
+            this.contentHeight = e.nativeEvent.layout.height
+          }}
+          style={{flex: 1, alignSelf: 'stretch'}}>
           {this.props.children}
         </View>
       </ScrollView>
@@ -52,14 +64,28 @@ export default class SnapLineScrollView extends Component {
 
   _scrollYBy (e, y) {
     if (this.ref) {
+      let scollYTarget = e.nativeEvent.contentOffset.y + y
+      if (scollYTarget < 0) {
+        scollYTarget = 0
+      }
+
+      const {containerHeight = windowHeight} = this.props
+      if (scollYTarget + containerHeight > this.contentHeight) {
+        scollYTarget = this.contentHeight - containerHeight
+      }
       this.ref.scrollTo({
-        y: (e.nativeEvent.contentOffset.y + y),
+        y: scollYTarget,
         animated: true
       })
     }
   }
 
   _onEnd (e) {
+    this.ref.scrollTo({
+      y: e.nativeEvent.contentOffset.y,
+      animated: true
+    })
+
     const {snapLineList = [], throttle = 100, containerHeight = windowHeight} = this.props
     this.linePageOffsetList = snapLineList.map(item => item - e.nativeEvent.contentOffset.y)
 
