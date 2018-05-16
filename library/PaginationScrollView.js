@@ -26,7 +26,16 @@ export default class extends Component {
     this.state = {
       offsetY: new Animated.Value(0),
     }
-    this._panResponder = this.props.children.length > 1 ? PanResponder.create({
+
+    let validChildrenNum = 0
+    React.Children.forEach(this.props.children, (item) => {
+      if (item === null) {
+        console.log('React.Children.forEach null')
+      } else {
+        validChildrenNum++
+      }
+    })
+    this._panResponder = PanResponder.create({
       onStartShouldSetPanResponder: this.onStartShouldSetPanResponder.bind(this),
       onStartShouldSetPanResponderCapture: this.onStartShouldSetPanResponderCapture.bind(this),
       onMoveShouldSetPanResponder: this.onMoveShouldSetPanResponder.bind(this),
@@ -35,7 +44,7 @@ export default class extends Component {
       onPanResponderRelease: this.onPanResponderTerminate.bind(this),
       onPanResponderTerminate: this.onPanResponderRelease.bind(this),
       onPanResponderTerminationRequest: this.onPanResponderTerminationRequest.bind(this)
-    }) : null
+    })
 
     this.isStartFromBottom = false
     this.isStartFromTop = false
@@ -47,8 +56,17 @@ export default class extends Component {
 
   render () {
     const {scrollWindowHeight: height} = this.props
+
+    let validChildrenNum = 0
+    React.Children.forEach(this.props.children, (item) => {
+      if (item === null) {
+        console.log('React.Children.forEach null')
+      } else {
+        validChildrenNum++
+      }
+    })
     return <Animated.View
-      {...(this._panResponder ? this._panResponder.panHandlers : {})}
+      {...(validChildrenNum > 1 ? this._panResponder.panHandlers : {})}
       style={[{
         transform: [
           {translateY: this.state.offsetY}
