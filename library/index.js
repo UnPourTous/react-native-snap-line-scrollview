@@ -3,4 +3,5 @@
  */
 
 export { default as SnapLineScrollView } from './SnapLineScrollView'
+export { default as PaginationScrollView } from './PaginationScrollView'
 
