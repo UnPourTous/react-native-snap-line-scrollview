@@ -9,12 +9,13 @@ import {
   Dimensions,
   ScrollView,
   Animated,
-  PanResponder
+  PanResponder,
+  Platform
 } from 'react-native'
 
-let {height: windownHeight, width} = Dimensions.get('window')
-const throttle = 150
-const duration = 300
+let {height: windownHeight} = Dimensions.get('window')
+const throttle = Platform.select({android: 100, ios: 150})
+const duration = 100
 export default class extends Component {
   static propTypes = {}
   static defaultProps = {
@@ -75,6 +76,7 @@ export default class extends Component {
       {React.Children.map(this.props.children, (item, index) => {
         return <ScrollView
           key={'key' + index}
+          overScrollMode={'never'}
           style={{
             height: height,
             flex: 1
@@ -113,10 +115,14 @@ export default class extends Component {
   }
 
   onMoveShouldSetPanResponder (e, gestureState) {
-    console.log('onMoveShouldSetPanResponder', this.scrollViewContentOffsetY, gestureState.moveY, gestureState.y0, gestureState.dy, this.scrollViewContentOffsetY <= 5 && gestureState.dy > 1)
+    console.log('onMoveShouldSetPanResponder', this.scrollViewContentOffsetY, gestureState.moveY, gestureState.y0, gestureState.dy, ((this.isAtBottom() && this.isMovingUp(e, gestureState)) ||
+      (this.isAtTop() && this.isMovingDown(e, gestureState))))
     // if (this.scrollViewContentOffsetY <= 5 && gestureState.dy > 1 && (this.startPoint && this.startPoint.pageY < topAreaHeight)) {
-    return ((this.isAtBottom() && this.isMovingUp(e, gestureState)) ||
-      (this.isAtTop() && this.isMovingDown(e, gestureState)));
+    return Platform.select({
+      android: true,
+      ios: ((this.isAtBottom() && this.isMovingUp(e, gestureState)) ||
+      (this.isAtTop() && this.isMovingDown(e, gestureState)))
+    })
   }
 
   onMoveShouldSetPanResponderCapture (e, gestureState) {
@@ -124,11 +130,14 @@ export default class extends Component {
     console.log('onMoveShouldSetPanResponderCapture', this.scrollViewContentOffsetY, gestureState.moveY, gestureState.y0, gestureState.dy, this.scrollViewContentOffsetY <= 5 && gestureState.dy > 1)
     console.log('onMoveShouldSetPanResponderCapture',
       gestureState.dy !== 0 &&
-      ((this.state.isStartFromBottom && this.isMovingUp(e, gestureState)) ||
-        (this.state.isStartFromBottom && this.isMovingDown(e, gestureState))))
-    return gestureState.dy !== 0 &&
-      ((this.state.isStartFromBottom && this.isMovingUp(e, gestureState)) ||
-        (this.state.isStartFromBottom && this.isMovingDown(e, gestureState)))
+      ((this.isStartFromBottom && this.isMovingUp(e, gestureState)) ||
+        (this.isStartFromTop && this.isMovingDown(e, gestureState))))
+    return Platform.select({
+      android: true,
+      ios: gestureState.dy !== 0 &&
+      ((this.isStartFromBottom && this.isMovingUp(e, gestureState)) ||
+        (this.isStartFromTop && this.isMovingDown(e, gestureState)))
+    })
   }
 
   // if the content scroll value is at 0, we allow for a pull to refresh
