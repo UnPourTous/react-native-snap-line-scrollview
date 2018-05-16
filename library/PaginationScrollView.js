@@ -12,18 +12,21 @@ import {
   PanResponder
 } from 'react-native'
 
-const {height, width} = Dimensions.get('window')
+let {height: windownHeight, width} = Dimensions.get('window')
 const throttle = 150
 const duration = 300
-export default class  extends Component {
+export default class extends Component {
   static propTypes = {}
+  static defaultProps = {
+    scrollWindowHeight: windownHeight
+  }
 
   constructor () {
     super(...arguments)
     this.state = {
       offsetY: new Animated.Value(0),
     }
-    this._panResponder = PanResponder.create({
+    this._panResponder = this.props.children.length > 1 ? PanResponder.create({
       onStartShouldSetPanResponder: this.onStartShouldSetPanResponder.bind(this),
       onStartShouldSetPanResponderCapture: this.onStartShouldSetPanResponderCapture.bind(this),
       onMoveShouldSetPanResponder: this.onMoveShouldSetPanResponder.bind(this),
@@ -32,7 +35,7 @@ export default class  extends Component {
       onPanResponderRelease: this.onPanResponderTerminate.bind(this),
       onPanResponderTerminate: this.onPanResponderRelease.bind(this),
       onPanResponderTerminationRequest: this.onPanResponderTerminationRequest.bind(this)
-    })
+    }) : null
 
     this.isStartFromBottom = false
     this.isStartFromTop = false
@@ -43,18 +46,20 @@ export default class  extends Component {
   }
 
   render () {
+    const {scrollWindowHeight: height} = this.props
     return <Animated.View
       {...(this._panResponder ? this._panResponder.panHandlers : {})}
-      style={{
+      style={[{
         transform: [
           {translateY: this.state.offsetY}
         ],
-      }}>
+      }, this.props.style]}>
       {React.Children.map(this.props.children, (item, index) => {
         return <ScrollView
           key={'key' + index}
           style={{
-            height: height
+            height: height,
+            flex: 1
           }}
           scrollEventThrottle={16}
           onScroll={(e) => {
@@ -71,37 +76,46 @@ export default class  extends Component {
           </View>
         </ScrollView>
       })}
-
     </Animated.View>
   }
 
   onStartShouldSetPanResponder (e) {
     console.log('onStartShouldSetPanResponder', this.scrollViewContentOffsetY, this.scrollViewContentOffsetY <= 5)
 
-    this.isStartFromBottom = !!this.isAtBottom()
-    this.isStartFromTop = !!this.isAtTop()
+    this.isStartFromBottom = this.isAtBottom()
+    this.isStartFromTop = this.isAtTop()
     return false
   }
 
   onStartShouldSetPanResponderCapture (e, gestureState) {
     console.log('onStartShouldSetPanResponderCapture', e.nativeEvent, this.scrollViewContentOffsetY, gestureState.moveY, gestureState.y0, gestureState.dy, gestureState)
+    this.isStartFromBottom = this.isAtBottom()
+    this.isStartFromTop = this.isAtTop()
     return false
   }
 
   onMoveShouldSetPanResponder (e, gestureState) {
     console.log('onMoveShouldSetPanResponder', this.scrollViewContentOffsetY, gestureState.moveY, gestureState.y0, gestureState.dy, this.scrollViewContentOffsetY <= 5 && gestureState.dy > 1)
     // if (this.scrollViewContentOffsetY <= 5 && gestureState.dy > 1 && (this.startPoint && this.startPoint.pageY < topAreaHeight)) {
-    return !!((this.isAtBottom() && this.isMovingUp(e, gestureState)) ||
+    return ((this.isAtBottom() && this.isMovingUp(e, gestureState)) ||
       (this.isAtTop() && this.isMovingDown(e, gestureState)));
   }
 
   onMoveShouldSetPanResponderCapture (e, gestureState) {
+
     console.log('onMoveShouldSetPanResponderCapture', this.scrollViewContentOffsetY, gestureState.moveY, gestureState.y0, gestureState.dy, this.scrollViewContentOffsetY <= 5 && gestureState.dy > 1)
-    return false
+    console.log('onMoveShouldSetPanResponderCapture',
+      gestureState.dy !== 0 &&
+      ((this.state.isStartFromBottom && this.isMovingUp(e, gestureState)) ||
+        (this.state.isStartFromBottom && this.isMovingDown(e, gestureState))))
+    return gestureState.dy !== 0 &&
+      ((this.state.isStartFromBottom && this.isMovingUp(e, gestureState)) ||
+        (this.state.isStartFromBottom && this.isMovingDown(e, gestureState)))
   }
 
   // if the content scroll value is at 0, we allow for a pull to refresh
   onPanResponderMove (e, gestureState) {
+    const {scrollWindowHeight: height} = this.props
     console.log('onPanResponderMove', e.nativeEvent, this.scrollViewContentOffsetY, gestureState.moveY, gestureState.y0, gestureState.dy, gestureState.moveY > 0 && gestureState.dy > 1)
     if (this.isStartFromBottom && this.isMovingUp(e, gestureState)) {
       let pageOffsetHeight = 0
@@ -131,6 +145,7 @@ export default class  extends Component {
   }
 
   onPanResponderRelease (e, gestureState) {
+    const {scrollWindowHeight: height} = this.props
     // what to do when end
     if (this.isStartFromBottom && this.isMovingUp(e, gestureState)) {
       // 跳到下一页
@@ -178,14 +193,15 @@ export default class  extends Component {
    *  check if at bottom, if it is, capture the move up event
    */
   isAtBottom () {
-    return this.scrollViewContentOffsetY >= this.maxOffsetY[this.focusPageIndex] && this.focusPageIndex < (this.props.children.length - 1)
+    return Math.abs(this.scrollViewContentOffsetY - this.maxOffsetY[this.focusPageIndex]) <= 1 &&
+      this.focusPageIndex < (this.props.children.length - 1)
   }
 
   /**
    *  check if at bottom, if it is, capture the move down event
    */
   isAtTop () {
-    return this.scrollViewContentOffsetY <= 0 && this.focusPageIndex > 0
+    return this.scrollViewContentOffsetY <= 5 && this.focusPageIndex > 0
   }
 
   isMovingUp (e, gestureState) {
