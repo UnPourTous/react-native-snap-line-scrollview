@@ -53,6 +53,7 @@ export default class extends Component {
 
     this.maxOffsetY = []
     this.pageHeight = []
+    this.scrollViewRef = []
   }
 
   render () {
@@ -75,6 +76,9 @@ export default class extends Component {
       }, this.props.style]}>
       {React.Children.map(this.props.children, (item, index) => {
         return <ScrollView
+          ref={ref => {
+            ref && (this.scrollViewRef[index] = ref)
+          }}
           key={'key' + index}
           overScrollMode={'never'}
           style={{
@@ -104,40 +108,39 @@ export default class extends Component {
 
     this.isStartFromBottom = this.isAtBottom()
     this.isStartFromTop = this.isAtTop()
-    return false
+    return Platform.select({
+      android: this.isStartFromBottom || this.isStartFromTop,
+      ios: false
+    })
   }
 
   onStartShouldSetPanResponderCapture (e, gestureState) {
     console.log('onStartShouldSetPanResponderCapture', e.nativeEvent, this.scrollViewContentOffsetY, gestureState.moveY, gestureState.y0, gestureState.dy, gestureState)
     this.isStartFromBottom = this.isAtBottom()
     this.isStartFromTop = this.isAtTop()
-    return false
+    return Platform.select({
+      android: this.isStartFromBottom || this.isStartFromTop,
+      ios: false
+    })
   }
 
   onMoveShouldSetPanResponder (e, gestureState) {
     console.log('onMoveShouldSetPanResponder', this.scrollViewContentOffsetY, gestureState.moveY, gestureState.y0, gestureState.dy, ((this.isAtBottom() && this.isMovingUp(e, gestureState)) ||
       (this.isAtTop() && this.isMovingDown(e, gestureState))))
     // if (this.scrollViewContentOffsetY <= 5 && gestureState.dy > 1 && (this.startPoint && this.startPoint.pageY < topAreaHeight)) {
-    return Platform.select({
-      android: true,
-      ios: ((this.isAtBottom() && this.isMovingUp(e, gestureState)) ||
+    return ((this.isAtBottom() && this.isMovingUp(e, gestureState)) ||
       (this.isAtTop() && this.isMovingDown(e, gestureState)))
-    })
   }
 
   onMoveShouldSetPanResponderCapture (e, gestureState) {
-
     console.log('onMoveShouldSetPanResponderCapture', this.scrollViewContentOffsetY, gestureState.moveY, gestureState.y0, gestureState.dy, this.scrollViewContentOffsetY <= 5 && gestureState.dy > 1)
     console.log('onMoveShouldSetPanResponderCapture',
       gestureState.dy !== 0 &&
       ((this.isStartFromBottom && this.isMovingUp(e, gestureState)) ||
         (this.isStartFromTop && this.isMovingDown(e, gestureState))))
-    return Platform.select({
-      android: true,
-      ios: gestureState.dy !== 0 &&
+    return gestureState.dy !== 0 &&
       ((this.isStartFromBottom && this.isMovingUp(e, gestureState)) ||
         (this.isStartFromTop && this.isMovingDown(e, gestureState)))
-    })
   }
 
   // if the content scroll value is at 0, we allow for a pull to refresh
@@ -158,6 +161,22 @@ export default class extends Component {
         pageOffsetHeight += height
       }
       this.state.offsetY.setValue(gestureState.dy - pageOffsetHeight)
+    }
+
+    if (Platform.OS === 'android') {
+      if (this.isStartFromBottom && this.isMovingDown(e, gestureState)) {
+        this.scrollViewRef[this.focusPageIndex].scrollTo({
+          y: this.pageHeight[this.focusPageIndex] - height - gestureState.dy,
+          animated: false
+        })
+      }
+
+      if (this.isStartFromTop && this.isMovingUp(e, gestureState)) {
+        this.scrollViewRef[this.focusPageIndex].scrollTo({
+          y: -gestureState.dy,
+          animated: false
+        })
+      }
     }
   }
 
