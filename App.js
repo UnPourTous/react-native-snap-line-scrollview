@@ -23,7 +23,11 @@ export default class App extends Component<Props> {
 
   render () {
 
-    return <PaginationScrollView>
+    return <PaginationScrollView
+      style={{
+        height: 5 * height
+      }}
+      scrollWindowHeight={height}>
       <View style={{
         height: totalHeight,
         backgroundColor: 'green',
@@ -32,7 +36,22 @@ export default class App extends Component<Props> {
       </View>
 
       <View style={{
-        height: totalHeight + 200,
+        height: totalHeight + 100,
+        backgroundColor: 'yellow',
+      }}>
+        <Text>Page 2</Text>
+      </View>
+
+      <View style={{
+        height: totalHeight + 100,
+        backgroundColor: 'red',
+      }}>
+        <Text>Page 2</Text>
+      </View>
+
+
+      <View style={{
+        height: totalHeight + 100,
         backgroundColor: 'blue',
       }}>
         <Text>Page 2</Text>
@@ -40,7 +59,7 @@ export default class App extends Component<Props> {
 
       <View style={{
         height: totalHeight + 100,
-        backgroundColor: 'yellow',
+        backgroundColor: 'pink',
       }}>
         <Text>Page 2</Text>
       </View>
