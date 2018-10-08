@@ -119,7 +119,8 @@ export default class extends Component {
     this.isStartFromBottom = this.isAtBottom()
     this.isStartFromTop = this.isAtTop()
     return Platform.select({
-      android: this.isStartFromBottom || this.isStartFromTop,
+      // android: this.isStartFromBottom || this.isStartFromTop,
+      android: false,
       ios: false
     })
   }
